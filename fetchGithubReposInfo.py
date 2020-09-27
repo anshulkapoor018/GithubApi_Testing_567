@@ -14,44 +14,37 @@ def fetchRepos(user_id):
     """ Fetch user's repositories and commits"""
     repo_api = "https://api.github.com/users/"
     commit_api = "https://api.github.com/repos/"
-
-    list_of_repo = []
-    commits = []
-
-    repo_url = repo_api + f'{user_id}/' + 'repos'
+    fetch_url = repo_api + user_id + '/repos'
+    output = []
+    get_url = requests.get(fetch_url)
+    repo_list = get_url.json()
 
     try:
-        repo_url = requests.get(url=repo_url)
-    except (TypeError, KeyError, IndexError):
-        return "Failed to fetch the repos"
+        for line in repo_list:
+            repo = line.get('name')
+            output.append(repo)
+    except (TypeError, KeyError, IndexError, AttributeError):
+        raise ValueError('Not able to Fetch repositories from Entered User ID')
 
-    repo_url = json.loads(repo_url.text)
+    return output
 
-    for repository in repo_url:
-        try:
-            list_of_repo.append(repository['name'])
-        except (TypeError, KeyError, IndexError):
-            return "Repository name doesn't exist"
+def number_of_commits(user_name, repo_name):
+    """ to get the number of commits in a repository """
+    get_url = requests.get('https://api.github.com/repos/{}/{}/commits'.format(user_name, repo_name))
+    commits = get_url.json()
 
-    for r in list_of_repo:
-        commit_url = commit_api + f'{user_id}/{r}/commits'
+    if commits == 0:
+        print('The respective repositories has no commits!')
 
-        try:
-            res = requests.get(url=commit_url)
-        except (TypeError, KeyError, IndexError):
-            return "Failed to fetch the commits"
-
-        res_json = json.loads(res.text)
-        commits.append(f'Repo: {r}  Number of commits: {len(res_json)}')
-
-    return commits
-
+    return len(commits)
 
 def main():
     """ Get user's Github ID as input """
-    user = input("Enter user's Github ID: ")
-    for repo in fetchRepos(user):
-        print(repo)
+    user_name = input("Please enter the GitHub user ID: ")
+
+    for repo in fetchRepos(user_name):
+        num = number_of_commits(user_name, repo)
+        print(f"Repo: {repo} Number of commits: {num}")
 
 
 if __name__ == '__main__':
